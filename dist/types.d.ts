@@ -57,7 +57,6 @@ export interface GetTokenOptions {
 }
 export interface AuthProviderProps {
     children: React.ReactNode;
-    domain: string;
     clientId: string;
     authorizationParams?: {
         redirect_uri?: string;
@@ -65,11 +64,6 @@ export interface AuthProviderProps {
         scope?: string;
     };
     membrosApiUrl?: string;
-    useToast?: (options: {
-        title: string;
-        description: string;
-        status?: "success" | "error" | "warning" | "info";
-    }) => void;
 }
 export interface AuthButtonProps {
     apiKey: string;

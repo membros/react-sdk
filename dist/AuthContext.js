@@ -35,9 +35,10 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-import { jsx as _jsx } from "react/jsx-runtime";
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { createContext, useContext, useEffect, useState, } from "react";
 import { setCookie, destroyCookie, parseCookies } from "nookies";
+import { Toaster, toast } from "sonner";
 var AuthContext = createContext(undefined);
 export var useAuth = function () {
     var context = useContext(AuthContext);
@@ -52,11 +53,7 @@ export var signOut = function () {
     window.location.reload();
 };
 export var MembrosProvider = function (_a) {
-    var children = _a.children, domain = _a.domain, clientId = _a.clientId, authorizationParams = _a.authorizationParams, 
-    // Legacy support
-    _b = _a.membrosApiUrl, 
-    // Legacy support
-    membrosApiUrl = _b === void 0 ? "https://api.membros.app" : _b, useToast = _a.useToast;
+    var children = _a.children, clientId = _a.clientId, authorizationParams = _a.authorizationParams, _b = _a.membrosApiUrl, membrosApiUrl = _b === void 0 ? "https://api.membros.app" : _b;
     var _c = useState(null), user = _c[0], setUser = _c[1];
     var _d = useState(null), token = _d[0], setToken = _d[1];
     var _e = useState(true), internalIsLoadingUser = _e[0], setInternalIsLoadingUser = _e[1];
@@ -92,7 +89,6 @@ export var MembrosProvider = function (_a) {
         }); };
         loadUserFromCookies();
     }, []);
-    // Updated to use email instead of user ID and accept currentToken
     var loadUserSubscriptions = function (email, currentToken) { return __awaiter(void 0, void 0, void 0, function () {
         var response, subscriptions, error_1;
         return __generator(this, function (_a) {
@@ -112,7 +108,6 @@ export var MembrosProvider = function (_a) {
                 case 2:
                     response = _a.sent();
                     if (response.status === 404) {
-                        setAdimplent(false);
                         setUserSubscriptions([]);
                         return [2 /*return*/];
                     }
@@ -120,13 +115,10 @@ export var MembrosProvider = function (_a) {
                 case 3:
                     subscriptions = _a.sent();
                     setUserSubscriptions(subscriptions);
-                    // Legacy adimplent check - will be deprecated in favor of hasActivePlan
-                    setAdimplent(false);
                     return [3 /*break*/, 6];
                 case 4:
                     error_1 = _a.sent();
-                    console.error("An unexpected error occurred", error_1);
-                    setAdimplent(false);
+                    console.error("An unexpected error occurred while loading subscriptions", error_1);
                     setUserSubscriptions([]);
                     return [3 /*break*/, 6];
                 case 5:
@@ -247,12 +239,11 @@ export var MembrosProvider = function (_a) {
     var getAccessTokenSilently = function (options) { return __awaiter(void 0, void 0, void 0, function () {
         return __generator(this, function (_a) {
             if (!token) {
-                throw new Error("No access token available");
+                throw new Error("No access token available. User might need to log in again.");
             }
             return [2 /*return*/, token];
         });
     }); };
-    // Legacy login method
     var login = function (authorizationCode) { return __awaiter(void 0, void 0, void 0, function () {
         var res, responseData, error_3;
         return __generator(this, function (_a) {
@@ -281,32 +272,15 @@ export var MembrosProvider = function (_a) {
                     return [4 /*yield*/, loadUserByToken(responseData.access_token)];
                 case 3:
                     _a.sent();
-                    if (useToast) {
-                        useToast({
-                            title: "Login Successful",
-                            description: "You are now logged in.",
-                        });
-                    }
+                    toast.success("Login Successful", { description: "You are now logged in." });
                     return [3 /*break*/, 5];
                 case 4:
-                    if (useToast) {
-                        useToast({
-                            title: "Login Failed",
-                            description: responseData.message || "Failed to retrieve token.",
-                            status: "error",
-                        });
-                    }
+                    toast.error("Login Failed", { description: responseData.message || "Failed to retrieve token." });
                     _a.label = 5;
                 case 5: return [3 /*break*/, 7];
                 case 6:
                     error_3 = _a.sent();
-                    if (useToast) {
-                        useToast({
-                            title: "Server Error",
-                            description: "An error occurred while fetching the token.",
-                            status: "error",
-                        });
-                    }
+                    toast.error("Server Error", { description: "An error occurred while fetching the token." });
                     return [3 /*break*/, 7];
                 case 7: return [2 /*return*/];
             }
@@ -320,7 +294,6 @@ export var MembrosProvider = function (_a) {
         setUser(null);
         setToken(null);
         setUserSubscriptions([]);
-        setAdimplent(false);
         setOriginalUser(null);
         setInternalIsLoadingUser(false);
         setInternalIsLoadingSubscriptions(false);
@@ -331,35 +304,22 @@ export var MembrosProvider = function (_a) {
             window.location.href = returnTo;
         }
     };
-    // Check if user has active plan
     var hasActivePlan = function (planIds) {
-        console.log('=== hasActivePlan Debug Start ===');
-        console.log('Required plan IDs:', planIds);
-        console.log('Total subscriptions:', userSubscriptions.length);
         if (!userSubscriptions || userSubscriptions.length === 0) {
-            console.log('No subscriptions available');
             return false;
         }
-        // Find all subscriptions that match the required plan IDs
+        if (!planIds || planIds.length === 0) {
+            return userSubscriptions.some(function (sub) { return sub.status === 'active'; });
+        }
         for (var _i = 0, userSubscriptions_1 = userSubscriptions; _i < userSubscriptions_1.length; _i++) {
             var subscription = userSubscriptions_1[_i];
             var subscriptionPlanId = String(subscription.plan.id);
-            console.log("Checking subscription: ".concat(subscription.id, ", Plan: ").concat(subscriptionPlanId, ", Status: ").concat(subscription.status));
-            // Check if this subscription matches any of the required plans
             if (planIds.includes(subscriptionPlanId)) {
-                console.log("\u2713 Subscription matches required plan: ".concat(subscriptionPlanId));
-                // If subscription is active, grant access immediately
                 if (subscription.status === 'active') {
-                    console.log("\u2713 ACTIVE subscription found! Granting access.");
                     return true;
-                }
-                else {
-                    // Log why access is not granted for this specific matching plan
-                    console.log("Subscription plan ".concat(subscriptionPlanId, " found, but status is '").concat(subscription.status, "' (not 'active'). Access not granted for this item."));
                 }
             }
         }
-        console.log('❌ No valid subscription found for required plans after checking all subscriptions.');
         return false;
     };
     var overwriteUser = function (newUser) {
@@ -377,7 +337,7 @@ export var MembrosProvider = function (_a) {
             setOriginalUser(null);
         }
     };
-    return (_jsx(AuthContext.Provider, { value: {
+    return (_jsxs(AuthContext.Provider, { value: {
             user: user,
             isAuthenticated: isAuthenticated,
             isLoading: isLoading,
@@ -387,7 +347,6 @@ export var MembrosProvider = function (_a) {
             loginWithPopup: loginWithPopup,
             logout: logout,
             getAccessTokenSilently: getAccessTokenSilently,
-            // Legacy API
             originalUser: originalUser,
             token: token,
             login: login,
@@ -395,10 +354,9 @@ export var MembrosProvider = function (_a) {
             adimplent: adimplent,
             overwriteUser: overwriteUser,
             revertToOriginalUser: revertToOriginalUser,
-            publicKey: clientId, // Map clientId to publicKey for legacy support
+            publicKey: clientId,
             membrosApiUrl: membrosApiUrl,
-            // New subscription features
             hasActivePlan: hasActivePlan,
             userSubscriptions: userSubscriptions,
-        }, children: children }));
+        }, children: [_jsx(Toaster, { richColors: true }), children] }));
 };

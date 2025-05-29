@@ -125,16 +125,15 @@ const UserProfile = () => {
   }
 
   if (isAuthenticated && user) {
-    const canAccessFreemium = hasActivePlan(); // Check for any active plan
-    const hasProPlan = hasActivePlan(['pro-plan-id']);
+    const hasActivePlan = hasActivePlan(['pro-plan-id']);
 
     return (
       <div>
         <img src={user.picture} alt={user.name} />
         <h2>{user.name}</h2>
         <p>{user.email}</p>
-        <p>Freemium Access: {canAccessFreemium ? 'Yes' : 'No'}</p>
-        <p>Pro Plan Access: {hasProPlan ? 'Yes' : 'No'}</p>
+        <p>Freemium Access: Yes</p>
+        <p>Pro Plan Access: {hasActivePlan ? 'Yes' : 'No'}</p>
         {/* Display other subscription details if available in user object */}
       </div>
     );
