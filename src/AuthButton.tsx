@@ -4,17 +4,18 @@ import React, { useEffect } from "react";
 import { setCookie } from "nookies";
 import { useAuth } from "./AuthContext";
 import { AuthButtonProps } from "./types";
+import { MEMBROS_API_URL } from "./constants";
 
 // Hook for auth functionality
 export const useAuthButton = (
   onAuthSuccess?: (accessToken: string) => void,
   redirectMode: "popup" | "redirect" = "popup"
 ) => {
-  const { loadUserByToken, publicKey, membrosApiUrl } = useAuth();
+  const { loadUserByToken, publicKey } = useAuth();
 
   const fetchToken = async (authorizationCode: string, useToast?: any) => {
     try {
-      const res = await fetch(`${membrosApiUrl}/user/auth/token`, {
+      const res = await fetch(`${MEMBROS_API_URL}/user/auth/token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ authorization_code: authorizationCode }),
@@ -79,12 +80,10 @@ export const useAuthButton = (
   }, [redirectMode]);
 
   const handleLogin = (useToast?: any) => {
-    const windowDomain = "https://id.membros.app"; // OAuth provider's domain
-    const redirectUri = encodeURIComponent(window.location.href); // Current page URL as redirect URI
-    const authUrl = `${windowDomain}/oauth2/${publicKey}?redirect_uri=${redirectUri}`;
-
     if (redirectMode === "redirect") {
-      // Full page redirect
+      // Full page redirect using OAuth2 page
+      const redirectUri = encodeURIComponent(window.location.href);
+      const authUrl = `http://localhost:3003/oauth2/${publicKey}?flow=redirect&redirect_uri=${redirectUri}`;
       window.location.href = authUrl;
     } else {
       // Popup window (default behavior)
@@ -94,24 +93,20 @@ export const useAuthButton = (
       const top = window.screen.height / 2 - height / 2;
       const specs = `width=${width},height=${height},top=${top},left=${left},menubar=no,toolbar=no,location=no,status=no`;
 
+      const redirectOrigin = encodeURIComponent(window.location.origin);
+      const authUrl = `http://localhost:3003/oauth2/${publicKey}?flow=popup&redirect_origin=${redirectOrigin}`;
+      
       const authWindow = window.open(authUrl, "_blank", specs);
 
       const handleAuthCodeFromMessage = (event: MessageEvent) => {
-        // Temporarily disable origin checking for debugging
+        // Allow localhost for debugging
         console.log("Received message from origin:", event.origin);
         console.log("Message data:", event.data);
         
-        // TODO: Re-enable origin validation once we confirm the flow works
-        // const allowedOrigins = [
-        //   "https://id.membros.app",
-        //   "https://id.membros.app/",
-        //   windowDomain
-        // ];
-        // 
-        // if (!allowedOrigins.includes(event.origin)) {
-        //   console.error("Invalid origin for OAuth response:", event.origin, "Expected one of:", allowedOrigins);
-        //   return;
-        // }
+        if (event.origin !== "http://localhost:3003") {
+          console.error("Invalid origin for OAuth response:", event.origin);
+          return;
+        }
 
         if (event.data.type === "oauth" && event.data.code) {
           const authorizationCode = event.data.code;

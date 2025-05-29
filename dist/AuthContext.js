@@ -39,6 +39,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { createContext, useContext, useEffect, useState, } from "react";
 import { setCookie, destroyCookie, parseCookies } from "nookies";
 import { Toaster, toast } from "sonner";
+import { MEMBROS_API_URL } from "./constants";
 var AuthContext = createContext(undefined);
 export var useAuth = function () {
     var context = useContext(AuthContext);
@@ -53,37 +54,48 @@ export var signOut = function () {
     window.location.reload();
 };
 export var MembrosProvider = function (_a) {
-    var children = _a.children, clientId = _a.clientId, authorizationParams = _a.authorizationParams, _b = _a.membrosApiUrl, membrosApiUrl = _b === void 0 ? "https://api.membros.app" : _b;
-    var _c = useState(null), user = _c[0], setUser = _c[1];
-    var _d = useState(null), token = _d[0], setToken = _d[1];
-    var _e = useState(true), internalIsLoadingUser = _e[0], setInternalIsLoadingUser = _e[1];
-    var _f = useState(true), internalIsLoadingSubscriptions = _f[0], setInternalIsLoadingSubscriptions = _f[1];
-    var _g = useState(null), error = _g[0], setError = _g[1];
-    var _h = useState(false), adimplent = _h[0], setAdimplent = _h[1];
-    var _j = useState(null), originalUser = _j[0], setOriginalUser = _j[1];
-    var _k = useState([]), userSubscriptions = _k[0], setUserSubscriptions = _k[1];
-    var _l = useState(false), isLoggingOut = _l[0], setIsLoggingOut = _l[1];
+    var children = _a.children, clientId = _a.clientId, authorizationParams = _a.authorizationParams;
+    var _b = useState(null), user = _b[0], setUser = _b[1];
+    var _c = useState(null), token = _c[0], setToken = _c[1];
+    var _d = useState(true), internalIsLoadingUser = _d[0], setInternalIsLoadingUser = _d[1];
+    var _e = useState(true), internalIsLoadingSubscriptions = _e[0], setInternalIsLoadingSubscriptions = _e[1];
+    var _f = useState(null), error = _f[0], setError = _f[1];
+    var _g = useState(false), adimplent = _g[0], setAdimplent = _g[1];
+    var _h = useState(null), originalUser = _h[0], setOriginalUser = _h[1];
+    var _j = useState([]), userSubscriptions = _j[0], setUserSubscriptions = _j[1];
+    var _k = useState(false), isLoggingOut = _k[0], setIsLoggingOut = _k[1];
     var isAuthenticated = !!user;
     var isLoading = internalIsLoadingUser || internalIsLoadingSubscriptions;
     useEffect(function () {
         var loadUserFromCookies = function () { return __awaiter(void 0, void 0, void 0, function () {
-            var accessToken;
+            var urlParams, authCode, newUrl, accessToken;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         setInternalIsLoadingUser(true);
                         setInternalIsLoadingSubscriptions(true);
-                        accessToken = parseCookies()["nextauth.token"];
-                        if (!accessToken) return [3 /*break*/, 2];
-                        return [4 /*yield*/, loadUserByToken(accessToken)];
+                        urlParams = new URLSearchParams(window.location.search);
+                        authCode = urlParams.get('code');
+                        if (!authCode) return [3 /*break*/, 2];
+                        console.log("Found authorization code in URL, processing...");
+                        return [4 /*yield*/, login(authCode)];
                     case 1:
                         _a.sent();
-                        return [3 /*break*/, 3];
+                        newUrl = window.location.pathname;
+                        window.history.replaceState({}, document.title, newUrl);
+                        return [2 /*return*/];
                     case 2:
+                        accessToken = parseCookies()["nextauth.token"];
+                        if (!accessToken) return [3 /*break*/, 4];
+                        return [4 /*yield*/, loadUserByToken(accessToken)];
+                    case 3:
+                        _a.sent();
+                        return [3 /*break*/, 5];
+                    case 4:
                         setInternalIsLoadingUser(false);
                         setInternalIsLoadingSubscriptions(false);
-                        _a.label = 3;
-                    case 3: return [2 /*return*/];
+                        _a.label = 5;
+                    case 5: return [2 /*return*/];
                 }
             });
         }); };
@@ -98,7 +110,7 @@ export var MembrosProvider = function (_a) {
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 4, 5, 6]);
-                    return [4 /*yield*/, fetch("".concat(membrosApiUrl, "/subscription/account/email/").concat(email), {
+                    return [4 /*yield*/, fetch("".concat(MEMBROS_API_URL, "/subscription/account/email/").concat(email), {
                             method: "GET",
                             headers: {
                                 "Content-Type": "application/json",
@@ -141,7 +153,7 @@ export var MembrosProvider = function (_a) {
                         path: "/",
                         maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
                     });
-                    return [4 /*yield*/, fetch("".concat(membrosApiUrl, "/whoami"), {
+                    return [4 /*yield*/, fetch("".concat(MEMBROS_API_URL, "/whoami"), {
                             headers: { Authorization: "Bearer ".concat(accessToken) },
                         })];
                 case 1:
@@ -195,7 +207,7 @@ export var MembrosProvider = function (_a) {
                 (options === null || options === void 0 ? void 0 : options.redirectUri) ||
                 (authorizationParams === null || authorizationParams === void 0 ? void 0 : authorizationParams.redirect_uri) ||
                 window.location.origin;
-            authUrl = "".concat(membrosApiUrl, "/auth/login?redirect_uri=").concat(encodeURIComponent(redirectUri), "&client_id=").concat(clientId);
+            authUrl = "http://localhost:3003/oauth2/".concat(clientId, "?flow=redirect&redirect_uri=").concat(encodeURIComponent(redirectUri));
             window.location.href = authUrl;
             return [2 /*return*/];
         });
@@ -203,12 +215,9 @@ export var MembrosProvider = function (_a) {
     var loginWithPopup = function (options) { return __awaiter(void 0, void 0, void 0, function () {
         return __generator(this, function (_a) {
             return [2 /*return*/, new Promise(function (resolve, reject) {
-                    var _a;
-                    var redirectUri = ((_a = options === null || options === void 0 ? void 0 : options.authorizationParams) === null || _a === void 0 ? void 0 : _a.redirect_uri) ||
-                        (options === null || options === void 0 ? void 0 : options.redirectUri) ||
-                        (authorizationParams === null || authorizationParams === void 0 ? void 0 : authorizationParams.redirect_uri) ||
-                        "".concat(window.location.origin, "/auth/callback");
-                    var authUrl = "".concat(membrosApiUrl, "/auth/login?redirect_uri=").concat(encodeURIComponent(redirectUri), "&client_id=").concat(clientId, "&mode=popup");
+                    var redirectOrigin = window.location.origin;
+                    // Use the OAuth2 page with popup flow
+                    var authUrl = "http://localhost:3003/oauth2/".concat(clientId, "?flow=popup&redirect_origin=").concat(encodeURIComponent(redirectOrigin));
                     var popup = window.open(authUrl, "auth-popup", "width=500,height=600");
                     var checkClosed = setInterval(function () {
                         if (popup === null || popup === void 0 ? void 0 : popup.closed) {
@@ -217,19 +226,14 @@ export var MembrosProvider = function (_a) {
                         }
                     }, 1000);
                     var messageHandler = function (event) {
-                        if (event.origin !== new URL(membrosApiUrl).origin)
+                        // Allow localhost for debugging
+                        if (event.origin !== "http://localhost:3003")
                             return;
-                        if (event.data.type === "AUTH_SUCCESS") {
+                        if (event.data.type === "oauth" && event.data.code) {
                             clearInterval(checkClosed);
                             popup === null || popup === void 0 ? void 0 : popup.close();
                             window.removeEventListener("message", messageHandler);
-                            loadUserByToken(event.data.token).then(function () { return resolve(); });
-                        }
-                        else if (event.data.type === "AUTH_ERROR") {
-                            clearInterval(checkClosed);
-                            popup === null || popup === void 0 ? void 0 : popup.close();
-                            window.removeEventListener("message", messageHandler);
-                            reject(new Error(event.data.error));
+                            login(event.data.code).then(function () { return resolve(); }).catch(reject);
                         }
                     };
                     window.addEventListener("message", messageHandler);
@@ -245,12 +249,37 @@ export var MembrosProvider = function (_a) {
         });
     }); };
     var login = function (authorizationCode) { return __awaiter(void 0, void 0, void 0, function () {
-        var res, responseData, error_3;
+        var mockToken, mockRefreshToken, mockUser, res, responseData, error_3;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 6, , 7]);
-                    return [4 /*yield*/, fetch("".concat(membrosApiUrl, "/user/auth/token"), {
+                    // For debugging with mock codes, simulate token exchange
+                    if (authorizationCode.startsWith("auth_code_")) {
+                        mockToken = "mock_token_".concat(Date.now(), "_").concat(Math.random().toString(36).substr(2, 9));
+                        mockRefreshToken = "mock_refresh_".concat(Date.now(), "_").concat(Math.random().toString(36).substr(2, 9));
+                        setCookie(null, "nextauth.token", mockToken, {
+                            path: "/",
+                            maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
+                        });
+                        setCookie(null, "nextauth.refreshToken", mockRefreshToken, {
+                            path: "/",
+                            maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
+                        });
+                        mockUser = {
+                            id: "mock-user-id",
+                            name: "Mock User",
+                            email: "mock@example.com",
+                            plano: "vestibulando",
+                        };
+                        setUser(mockUser);
+                        setToken(mockToken);
+                        setInternalIsLoadingUser(false);
+                        setInternalIsLoadingSubscriptions(false);
+                        toast.success("Login Successful", { description: "You are now logged in (mock mode)." });
+                        return [2 /*return*/];
+                    }
+                    return [4 /*yield*/, fetch("".concat(MEMBROS_API_URL, "/user/auth/token"), {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ authorization_code: authorizationCode }),
@@ -280,6 +309,7 @@ export var MembrosProvider = function (_a) {
                 case 5: return [3 /*break*/, 7];
                 case 6:
                     error_3 = _a.sent();
+                    console.error("Login error:", error_3);
                     toast.error("Server Error", { description: "An error occurred while fetching the token." });
                     return [3 /*break*/, 7];
                 case 7: return [2 /*return*/];
@@ -355,7 +385,6 @@ export var MembrosProvider = function (_a) {
             overwriteUser: overwriteUser,
             revertToOriginalUser: revertToOriginalUser,
             publicKey: clientId,
-            membrosApiUrl: membrosApiUrl,
             hasActivePlan: hasActivePlan,
             userSubscriptions: userSubscriptions,
         }, children: [_jsx(Toaster, { richColors: true }), children] }));

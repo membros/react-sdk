@@ -39,17 +39,18 @@ import { jsx as _jsx } from "react/jsx-runtime";
 import { useEffect } from "react";
 import { setCookie } from "nookies";
 import { useAuth } from "./AuthContext";
+import { MEMBROS_API_URL } from "./constants";
 // Hook for auth functionality
 export var useAuthButton = function (onAuthSuccess, redirectMode) {
     if (redirectMode === void 0) { redirectMode = "popup"; }
-    var _a = useAuth(), loadUserByToken = _a.loadUserByToken, publicKey = _a.publicKey, membrosApiUrl = _a.membrosApiUrl;
+    var _a = useAuth(), loadUserByToken = _a.loadUserByToken, publicKey = _a.publicKey;
     var fetchToken = function (authorizationCode, useToast) { return __awaiter(void 0, void 0, void 0, function () {
         var res, responseData, error_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 6, , 7]);
-                    return [4 /*yield*/, fetch("".concat(membrosApiUrl, "/user/auth/token"), {
+                    return [4 /*yield*/, fetch("".concat(MEMBROS_API_URL, "/user/auth/token"), {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ authorization_code: authorizationCode }),
@@ -119,11 +120,10 @@ export var useAuthButton = function (onAuthSuccess, redirectMode) {
         }
     }, [redirectMode]);
     var handleLogin = function (useToast) {
-        var windowDomain = "https://id.membros.app"; // OAuth provider's domain
-        var redirectUri = encodeURIComponent(window.location.href); // Current page URL as redirect URI
-        var authUrl = "".concat(windowDomain, "/oauth2/").concat(publicKey, "?redirect_uri=").concat(redirectUri);
         if (redirectMode === "redirect") {
-            // Full page redirect
+            // Full page redirect using OAuth2 page
+            var redirectUri = encodeURIComponent(window.location.href);
+            var authUrl = "http://localhost:3003/oauth2/".concat(publicKey, "?flow=redirect&redirect_uri=").concat(redirectUri);
             window.location.href = authUrl;
         }
         else {
@@ -133,22 +133,17 @@ export var useAuthButton = function (onAuthSuccess, redirectMode) {
             var left = window.screen.width / 2 - width / 2;
             var top_1 = window.screen.height / 2 - height / 2;
             var specs = "width=".concat(width, ",height=").concat(height, ",top=").concat(top_1, ",left=").concat(left, ",menubar=no,toolbar=no,location=no,status=no");
+            var redirectOrigin = encodeURIComponent(window.location.origin);
+            var authUrl = "http://localhost:3003/oauth2/".concat(publicKey, "?flow=popup&redirect_origin=").concat(redirectOrigin);
             var authWindow_1 = window.open(authUrl, "_blank", specs);
             var handleAuthCodeFromMessage_1 = function (event) {
-                // Temporarily disable origin checking for debugging
+                // Allow localhost for debugging
                 console.log("Received message from origin:", event.origin);
                 console.log("Message data:", event.data);
-                // TODO: Re-enable origin validation once we confirm the flow works
-                // const allowedOrigins = [
-                //   "https://id.membros.app",
-                //   "https://id.membros.app/",
-                //   windowDomain
-                // ];
-                // 
-                // if (!allowedOrigins.includes(event.origin)) {
-                //   console.error("Invalid origin for OAuth response:", event.origin, "Expected one of:", allowedOrigins);
-                //   return;
-                // }
+                if (event.origin !== "http://localhost:3003") {
+                    console.error("Invalid origin for OAuth response:", event.origin);
+                    return;
+                }
                 if (event.data.type === "oauth" && event.data.code) {
                     var authorizationCode = event.data.code;
                     // Fetch the token using the authorization code

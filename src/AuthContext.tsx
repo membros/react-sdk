@@ -18,6 +18,7 @@ import {
   LogoutOptions,
   GetTokenOptions,
 } from "./types";
+import { MEMBROS_API_URL } from "./constants";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -39,7 +40,6 @@ export const MembrosProvider = ({
   children,
   clientId,
   authorizationParams,
-  membrosApiUrl = "https://api.membros.app",
 }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -60,6 +60,21 @@ export const MembrosProvider = ({
     const loadUserFromCookies = async () => {
       setInternalIsLoadingUser(true);
       setInternalIsLoadingSubscriptions(true);
+      
+      // First check for authorization code in URL (for redirect flow)
+      const urlParams = new URLSearchParams(window.location.search);
+      const authCode = urlParams.get('code');
+      
+      if (authCode) {
+        console.log("Found authorization code in URL, processing...");
+        await login(authCode);
+        // Clean up URL
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+        return;
+      }
+      
+      // If no auth code, check for existing token in cookies
       const { "nextauth.token": accessToken } = parseCookies();
       if (accessToken) {
         await loadUserByToken(accessToken);
@@ -75,7 +90,7 @@ export const MembrosProvider = ({
     setInternalIsLoadingSubscriptions(true);
     try {
       const response = await fetch(
-        `${membrosApiUrl}/subscription/account/email/${email}`,
+        `${MEMBROS_API_URL}/subscription/account/email/${email}`,
         {
           method: "GET",
           headers: {
@@ -110,7 +125,7 @@ export const MembrosProvider = ({
         maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
       });
 
-      const response = await fetch(`${membrosApiUrl}/whoami`, {
+      const response = await fetch(`${MEMBROS_API_URL}/whoami`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
@@ -154,23 +169,21 @@ export const MembrosProvider = ({
       authorizationParams?.redirect_uri ||
       window.location.origin;
 
-    const authUrl = `${membrosApiUrl}/auth/login?redirect_uri=${encodeURIComponent(
+    // Use the OAuth2 page with redirect flow
+    const authUrl = `http://localhost:3003/oauth2/${clientId}?flow=redirect&redirect_uri=${encodeURIComponent(
       redirectUri
-    )}&client_id=${clientId}`;
+    )}`;
     window.location.href = authUrl;
   };
 
   const loginWithPopup = async (options?: LoginOptions) => {
     return new Promise<void>((resolve, reject) => {
-      const redirectUri =
-        options?.authorizationParams?.redirect_uri ||
-        options?.redirectUri ||
-        authorizationParams?.redirect_uri ||
-        `${window.location.origin}/auth/callback`;
+      const redirectOrigin = window.location.origin;
 
-      const authUrl = `${membrosApiUrl}/auth/login?redirect_uri=${encodeURIComponent(
-        redirectUri
-      )}&client_id=${clientId}&mode=popup`;
+      // Use the OAuth2 page with popup flow
+      const authUrl = `http://localhost:3003/oauth2/${clientId}?flow=popup&redirect_origin=${encodeURIComponent(
+        redirectOrigin
+      )}`;
 
       const popup = window.open(authUrl, "auth-popup", "width=500,height=600");
 
@@ -182,18 +195,14 @@ export const MembrosProvider = ({
       }, 1000);
 
       const messageHandler = (event: MessageEvent) => {
-        if (event.origin !== new URL(membrosApiUrl).origin) return;
+        // Allow localhost for debugging
+        if (event.origin !== "http://localhost:3003") return;
 
-        if (event.data.type === "AUTH_SUCCESS") {
+        if (event.data.type === "oauth" && event.data.code) {
           clearInterval(checkClosed);
           popup?.close();
           window.removeEventListener("message", messageHandler);
-          loadUserByToken(event.data.token).then(() => resolve());
-        } else if (event.data.type === "AUTH_ERROR") {
-          clearInterval(checkClosed);
-          popup?.close();
-          window.removeEventListener("message", messageHandler);
-          reject(new Error(event.data.error));
+          login(event.data.code).then(() => resolve()).catch(reject);
         }
       };
 
@@ -212,7 +221,40 @@ export const MembrosProvider = ({
 
   const login = async (authorizationCode: string) => {
     try {
-      const res = await fetch(`${membrosApiUrl}/user/auth/token`, {
+      // For debugging with mock codes, simulate token exchange
+      if (authorizationCode.startsWith("auth_code_")) {
+        // Simulate a successful token exchange
+        const mockToken = `mock_token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const mockRefreshToken = `mock_refresh_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        setCookie(null, "nextauth.token", mockToken, {
+          path: "/",
+          maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
+        });
+        setCookie(null, "nextauth.refreshToken", mockRefreshToken, {
+          path: "/",
+          maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
+        });
+        
+        // Mock user data for testing
+        const mockUser = {
+          id: "mock-user-id",
+          name: "Mock User",
+          email: "mock@example.com",
+          plano: "vestibulando" as const,
+        };
+        
+        setUser(mockUser);
+        setToken(mockToken);
+        setInternalIsLoadingUser(false);
+        setInternalIsLoadingSubscriptions(false);
+        
+        toast.success("Login Successful", { description: "You are now logged in (mock mode)." });
+        return;
+      }
+
+      // Real token exchange for production
+      const res = await fetch(`${MEMBROS_API_URL}/user/auth/token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ authorization_code: authorizationCode }),
@@ -233,6 +275,7 @@ export const MembrosProvider = ({
         toast.error("Login Failed", { description: responseData.message || "Failed to retrieve token." });
       }
     } catch (error) {
+      console.error("Login error:", error);
       toast.error("Server Error", { description: "An error occurred while fetching the token." });
     }
   };
@@ -314,7 +357,6 @@ export const MembrosProvider = ({
         overwriteUser,
         revertToOriginalUser,
         publicKey: clientId,
-        membrosApiUrl,
         hasActivePlan,
         userSubscriptions,
       }}

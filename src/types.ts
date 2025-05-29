@@ -28,7 +28,6 @@ export interface AuthContextType {
   overwriteUser: (newUser: User) => void;
   revertToOriginalUser: () => void;
   publicKey: string;
-  membrosApiUrl: string;
   hasActivePlan: (planIds: string[]) => boolean;
   userSubscriptions: Subscription[];
 }
@@ -68,7 +67,6 @@ export interface AuthProviderProps {
     audience?: string;
     scope?: string;
   };
-  membrosApiUrl?: string;
 }
 
 export interface AuthButtonProps {

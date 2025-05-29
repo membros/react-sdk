@@ -3,7 +3,6 @@
 import React from "react";
 import { useAuth } from "../AuthContext";
 import { LoadingScreen } from "../components/LoadingScreen";
-import { AuthScreen } from "../components/AuthScreen";
 import { InadimplentScreen } from "../components/InadimplentScreen";
 import { WithAuthenticationRequiredOptions } from "../types";
 
