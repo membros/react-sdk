@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { setCookie } from "nookies";
+import { setCookie } from "./utils/cookies";
 import { useAuth } from "./AuthContext";
 import { AuthButtonProps } from "./types";
 import { MEMBROS_API_URL } from "./constants";

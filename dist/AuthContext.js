@@ -37,7 +37,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { createContext, useContext, useEffect, useState, } from "react";
-import { setCookie, destroyCookie, parseCookies } from "nookies";
+import { setCookie, destroyCookie, parseCookies } from "./utils/cookies";
 import { Toaster, toast } from "sonner";
 import { MEMBROS_API_URL } from "./constants";
 var AuthContext = createContext(undefined);

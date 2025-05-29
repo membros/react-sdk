@@ -37,7 +37,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 import { jsx as _jsx } from "react/jsx-runtime";
 import { useEffect } from "react";
-import { setCookie } from "nookies";
+import { setCookie } from "./utils/cookies";
 import { useAuth } from "./AuthContext";
 import { MEMBROS_API_URL } from "./constants";
 // Hook for auth functionality

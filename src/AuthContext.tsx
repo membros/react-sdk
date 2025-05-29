@@ -7,7 +7,7 @@ import React, {
   useState,
   ReactNode,
 } from "react";
-import { setCookie, destroyCookie, parseCookies } from "nookies";
+import { setCookie, destroyCookie, parseCookies } from "./utils/cookies";
 import { Toaster, toast } from "sonner";
 import {
   AuthContextType,

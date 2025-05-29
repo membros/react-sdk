@@ -1,6 +1,6 @@
 {
   "name": "membros-react-sdk",
-  "version": "1.0.3",
+  "version": "1.0.6",
   "description": "React authentication library for Membros platform with subscription management and plan-based access control",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -30,7 +30,6 @@
     "react-dom": ">=16.8.0"
   },
   "dependencies": {
-    "nookies": "^2.5.2",
     "sonner": "^1.4.0"
   },
   "devDependencies": {
@@ -38,4 +37,4 @@
     "@types/react-dom": "^18.0.0",
     "typescript": "^5.0.0"
   }
-} 
+}
