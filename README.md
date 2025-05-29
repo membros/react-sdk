@@ -1,4 +1,4 @@
-# @membros-auth
+# membros-react-sdk
 
 [![npm version](https://badge.fury.io/js/membros-react-sdk.svg)](https://badge.fury.io/js/membros-react-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
