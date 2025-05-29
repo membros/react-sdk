@@ -7,3 +7,4 @@ interface LogoutButtonProps {
 }
 export declare function LogoutButton({ children, className, options }: LogoutButtonProps): import("react/jsx-runtime").JSX.Element | null;
 export {};
+//# sourceMappingURL=LogoutButton.d.ts.map

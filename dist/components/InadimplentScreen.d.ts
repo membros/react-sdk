@@ -8,3 +8,4 @@ interface InadimplentScreenProps {
 }
 export declare const InadimplentScreen: React.FC<InadimplentScreenProps>;
 export {};
+//# sourceMappingURL=InadimplentScreen.d.ts.map

@@ -22,3 +22,4 @@ export declare const parseCookies: (ctx?: any) => Record<string, string>;
 export declare const destroyCookie: (ctx: any, // For compatibility with nookies API (not used in client-side)
 name: string, options?: Omit<CookieOptions, "maxAge" | "expires">) => void;
 export {};
+//# sourceMappingURL=cookies.d.ts.map

@@ -1,14 +1,23 @@
 {
   "name": "membros-react-sdk",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "React authentication library for Membros platform with subscription management and plan-based access control",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.esm.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.cjs"
+    }
+  },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "node build.cjs",
     "prepublishOnly": "npm run build",
     "publish": "npm run build && npm publish --access public"
   },

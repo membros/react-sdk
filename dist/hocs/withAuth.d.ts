@@ -8,3 +8,4 @@ interface WithAuthOptions {
 }
 export declare function withAuth<P extends object>(Component: React.ComponentType<P>, options?: WithAuthOptions): (props: P) => import("react/jsx-runtime").JSX.Element;
 export {};
+//# sourceMappingURL=withAuth.d.ts.map

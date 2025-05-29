@@ -4,7 +4,7 @@ import React, { useEffect } from "react";
 import { setCookie } from "./utils/cookies";
 import { useAuth } from "./AuthContext";
 import { AuthButtonProps } from "./types";
-import { MEMBROS_API_URL } from "./constants";
+import { MEMBROS_API_URL, MEMBROS_ID_URL } from "./constants";
 
 // Hook for auth functionality
 export const useAuthButton = (
@@ -83,7 +83,7 @@ export const useAuthButton = (
     if (redirectMode === "redirect") {
       // Full page redirect using OAuth2 page
       const redirectUri = encodeURIComponent(window.location.href);
-      const authUrl = `http://localhost:3003/oauth2/${publicKey}?flow=redirect&redirect_uri=${redirectUri}`;
+      const authUrl = `${MEMBROS_ID_URL}/oauth2/${publicKey}?flow=redirect&redirect_uri=${redirectUri}`;
       window.location.href = authUrl;
     } else {
       // Popup window (default behavior)
@@ -94,7 +94,7 @@ export const useAuthButton = (
       const specs = `width=${width},height=${height},top=${top},left=${left},menubar=no,toolbar=no,location=no,status=no`;
 
       const redirectOrigin = encodeURIComponent(window.location.origin);
-      const authUrl = `http://localhost:3003/oauth2/${publicKey}?flow=popup&redirect_origin=${redirectOrigin}`;
+      const authUrl = `${MEMBROS_ID_URL}/oauth2/${publicKey}?flow=popup&redirect_origin=${redirectOrigin}`;
       
       const authWindow = window.open(authUrl, "_blank", specs);
 
@@ -103,7 +103,7 @@ export const useAuthButton = (
         console.log("Received message from origin:", event.origin);
         console.log("Message data:", event.data);
         
-        if (event.origin !== "http://localhost:3003") {
+        if (event.origin !== MEMBROS_ID_URL) {
           console.error("Invalid origin for OAuth response:", event.origin);
           return;
         }

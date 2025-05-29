@@ -9,3 +9,4 @@ interface WithAdminAuthOptions {
 }
 export declare function withAdminAuth<P extends object>(Component: React.ComponentType<P>, options: WithAdminAuthOptions): (props: P) => import("react/jsx-runtime").JSX.Element | null;
 export {};
+//# sourceMappingURL=withAdminAuth.d.ts.map

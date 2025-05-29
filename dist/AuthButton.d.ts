@@ -7,3 +7,4 @@ export declare const useAuthButton: (onAuthSuccess?: (accessToken: string) => vo
 export declare const MembrosAuthButton: React.FC<Omit<AuthButtonProps, 'apiKey'> & {
     useToast?: any;
 }>;
+//# sourceMappingURL=AuthButton.d.ts.map

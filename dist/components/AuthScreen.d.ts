@@ -8,3 +8,4 @@ interface AuthScreenProps {
 }
 export declare const AuthScreen: React.FC<AuthScreenProps>;
 export {};
+//# sourceMappingURL=AuthScreen.d.ts.map

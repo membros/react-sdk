@@ -95,3 +95,4 @@ export interface WithAuthenticationRequiredOptions {
     AuthComponent?: React.ComponentType;
     InadimplentComponent?: React.ComponentType;
 }
+//# sourceMappingURL=types.d.ts.map

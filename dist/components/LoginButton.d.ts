@@ -8,3 +8,4 @@ interface LoginButtonProps {
 }
 export declare function LoginButton({ children, className, options, mode }: LoginButtonProps): import("react/jsx-runtime").JSX.Element | null;
 export {};
+//# sourceMappingURL=LoginButton.d.ts.map

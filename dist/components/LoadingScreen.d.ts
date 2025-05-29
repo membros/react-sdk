@@ -5,3 +5,4 @@ interface LoadingScreenProps {
 }
 export declare const LoadingScreen: React.FC<LoadingScreenProps>;
 export {};
+//# sourceMappingURL=LoadingScreen.d.ts.map

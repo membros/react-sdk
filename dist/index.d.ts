@@ -10,3 +10,4 @@ export { AuthScreen } from "./components/AuthScreen";
 export { LoadingScreen } from "./components/LoadingScreen";
 export { InadimplentScreen } from "./components/InadimplentScreen";
 export type { User, AuthContextType, AuthButtonProps, AuthProviderProps, Subscription, LoginOptions, LogoutOptions, GetTokenOptions, WithAuthenticationRequiredOptions } from "./types";
+//# sourceMappingURL=index.d.ts.map
