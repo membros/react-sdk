@@ -1,4 +1,5 @@
 import React from "react";
+import "moment/locale/pt-br";
 interface InadimplentScreenProps {
     className?: string;
     title?: string;

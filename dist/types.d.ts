@@ -1,13 +1,18 @@
 export interface User {
     id: string;
     name: string;
+    avatar: string | null;
+    document: string;
+    document_type: string;
+    phone_country_code: string;
+    phone_area_code: string;
+    phone_number: string;
+    txPercentage: number;
+    recipient_id: string;
     email: string;
-    plano: "rzero" | "vestibulando";
-    picture?: string;
-    email_verified?: boolean;
-    sub?: string;
-    nickname?: string;
-    updated_at?: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
 }
 export interface AuthContextType {
     user: User | null;
@@ -26,9 +31,14 @@ export interface AuthContextType {
     adimplent: boolean;
     overwriteUser: (newUser: User) => void;
     revertToOriginalUser: () => void;
-    publicKey: string;
     hasActivePlan: (planIds: string[]) => boolean;
     userSubscriptions: Subscription[];
+    currentSubscription: Subscription | null;
+    project: Project | null;
+    isLoadingProject: boolean;
+    projectError: Error | null;
+    loadProject: () => Promise<void>;
+    projectPlans: string[];
 }
 export interface LoginOptions {
     authorizationParams?: {
@@ -56,7 +66,7 @@ export interface GetTokenOptions {
 }
 export interface AuthProviderProps {
     children: React.ReactNode;
-    clientId: string;
+    projectId: string;
     authorizationParams?: {
         redirect_uri?: string;
         audience?: string;
@@ -70,22 +80,89 @@ export interface AuthButtonProps {
     children?: React.ReactNode;
     redirectMode?: "popup" | "redirect";
 }
-export interface Subscription {
-    id: string;
+export interface CurrentCycle {
+    id?: string;
+    cycle: number;
+    end_at: string;
     status: string;
     start_at: string;
+    charge_id: string;
+    billing_at: string;
+}
+export interface PricingScheme {
+    price: number;
+    scheme_type: string;
+}
+export interface SubscriptionItem {
+    name: string;
+    status: string;
+    pricing_scheme: PricingScheme;
+}
+export interface Plan {
+    id: string;
+    name: string;
+    logo_url?: string | null;
+    embedded_file_url?: string | null;
+    embedded_file_name?: string | null;
+    description?: string;
+    status?: string;
+    billing_type?: string;
+    pagarme_plan_id?: string;
+    statement_descriptor?: string;
+    interval?: string;
+    interval_count?: number;
+    trial_period_days?: number;
+    shippable?: boolean;
+    currency?: string;
+    payment_methods?: string[];
+    minimum_price?: number | null;
+    installments?: number[];
+    metadata?: any | null;
+    createdAt?: string;
+    updatedAt?: string;
+}
+export interface Card {
+    [key: string]: any;
+}
+export interface Split {
+    [key: string]: any;
+}
+export interface DiscountInfo {
+    [key: string]: any;
+}
+export interface Cycle {
+    [key: string]: any;
+}
+export interface Invoice {
+    [key: string]: any;
+}
+export interface Subscription {
+    id: string;
+    pagarme_subscription_id?: string | null;
+    pagarme_plan_id?: string | null;
+    code?: string | null;
+    start_at: string;
+    interval?: string;
+    interval_count?: number;
+    billing_type?: string;
+    next_billing_at?: string;
+    payment_method?: string;
+    currency?: string;
+    statement_descriptor?: string | null;
+    installments?: number;
+    status: string;
+    created_at?: string;
+    updated_at?: string;
+    canceled_at?: string | null;
+    current_cycle?: CurrentCycle;
+    card?: Card | null;
+    split?: Split | null;
+    discount_info?: DiscountInfo | null;
+    items?: SubscriptionItem[];
+    cycles?: Cycle[];
+    plan: Plan;
+    invoices?: Invoice[];
     user_id?: string;
-    plan: {
-        id: string | number;
-    };
-    current_cycle?: {
-        id: string;
-        start_at: string;
-        end_at: string;
-        billing_at: string;
-        status: string;
-        cycle: number;
-    };
 }
 export interface WithAuthenticationRequiredOptions {
     onRedirecting?: () => React.ReactElement;
@@ -94,5 +171,33 @@ export interface WithAuthenticationRequiredOptions {
     LoadingComponent?: React.ComponentType;
     AuthComponent?: React.ComponentType;
     InadimplentComponent?: React.ComponentType;
+}
+export interface ProjectCreator {
+    id: string;
+    name: string;
+    avatar: string | null;
+    document: string;
+    document_type: string;
+    phone_country_code: string;
+    phone_area_code: string;
+    phone_number: string;
+    txPercentage: number;
+    recipient_id: string;
+    email: string;
+    password: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+}
+export interface Project {
+    id: string;
+    name: string;
+    description: string | null;
+    logo_url: string | null;
+    icon: string | null;
+    createdAt: string;
+    updatedAt: string;
+    creator: ProjectCreator;
+    plan: Plan[];
 }
 //# sourceMappingURL=types.d.ts.map

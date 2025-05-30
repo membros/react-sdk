@@ -17,8 +17,10 @@ import {
   LoginOptions,
   LogoutOptions,
   GetTokenOptions,
+  Project,
+  ProjectCreator,
 } from "./types";
-import { MEMBROS_API_URL } from "./constants";
+import { MEMBROS_API_URL, MEMBROS_ID_URL } from "./constants";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -38,7 +40,7 @@ export const signOut = () => {
 
 export const MembrosProvider = ({
   children,
-  clientId,
+  projectId,
   authorizationParams,
 }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
@@ -51,7 +53,12 @@ export const MembrosProvider = ({
   const [userSubscriptions, setUserSubscriptions] = useState<Subscription[]>(
     []
   );
+  const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
+  const [project, setProject] = useState<Project | null>(null);
+  const [projectPlans, setProjectPlans] = useState<string[]>([]);
+  const [isLoadingProject, setIsLoadingProject] = useState<boolean>(true);
+  const [projectError, setProjectError] = useState<Error | null>(null);
 
   const isAuthenticated = !!user;
   const isLoading = internalIsLoadingUser || internalIsLoadingSubscriptions;
@@ -86,17 +93,50 @@ export const MembrosProvider = ({
     loadUserFromCookies();
   }, []);
 
-  const loadUserSubscriptions = async (email: string, currentToken: string) => {
+  useEffect(() => {
+    loadProject();
+  }, [projectId]);
+
+  // Reload user subscriptions when project plans are loaded
+  useEffect(() => {
+    if (user && token && projectPlans.length > 0) {
+      loadUserSubscriptions(user.email, token, projectPlans);
+    }
+  }, [projectPlans, user, token]);
+
+  // Update currentSubscription whenever userSubscriptions change
+  useEffect(() => {
+    if (userSubscriptions && Array.isArray(userSubscriptions) && userSubscriptions.length > 0) {
+      const activeSubscriptions = userSubscriptions.filter(sub => sub.status === 'active');
+      if (activeSubscriptions.length > 0) {
+        setCurrentSubscription(activeSubscriptions[0]);
+      } else {
+        setCurrentSubscription(userSubscriptions[0]);
+      }
+    } else {
+      setCurrentSubscription(null);
+    }
+  }, [userSubscriptions]);
+
+  const loadUserSubscriptions = async (email: string, currentToken: string, planIds: string[]) => {
     setInternalIsLoadingSubscriptions(true);
     try {
+      console.log("Loading user subscriptions for email:", email);
+      console.log("Plan IDs:", planIds);
+
+      // If no planIds provided, we'll send an empty array to get all available subscriptions
+      // The API endpoint expects planIds in the request body
+      const requestBody = { planIds: planIds || [] };
+      
       const response = await fetch(
-        `${MEMBROS_API_URL}/subscription/account/email/${email}`,
+        `${MEMBROS_API_URL}/subscription/account/email/${email}/plans`,
         {
-          method: "GET",
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${currentToken}`,
           },
+          body: JSON.stringify(requestBody),
         }
       );
 
@@ -106,7 +146,8 @@ export const MembrosProvider = ({
       }
 
       const subscriptions: Subscription[] = await response.json();
-      setUserSubscriptions(subscriptions);
+      // Ensure subscriptions is always an array
+      setUserSubscriptions(Array.isArray(subscriptions) ? subscriptions : []);
     } catch (error) {
       console.error("An unexpected error occurred while loading subscriptions", error);
       setUserSubscriptions([]);
@@ -140,7 +181,7 @@ export const MembrosProvider = ({
         const userData = await response.json();
         setUser(userData);
         setInternalIsLoadingUser(false);
-        await loadUserSubscriptions(userData.email, accessToken);
+        await loadUserSubscriptions(userData.email, accessToken, projectPlans);
       } else {
         console.error("Failed to load user data");
         setUser(null);
@@ -170,7 +211,7 @@ export const MembrosProvider = ({
       window.location.origin;
 
     // Use the OAuth2 page with redirect flow
-    const authUrl = `http://localhost:3003/oauth2/${clientId}?flow=redirect&redirect_uri=${encodeURIComponent(
+    const authUrl = `${MEMBROS_ID_URL}/oauth2/${projectId}?flow=redirect&redirect_uri=${encodeURIComponent(
       redirectUri
     )}`;
     window.location.href = authUrl;
@@ -181,7 +222,7 @@ export const MembrosProvider = ({
       const redirectOrigin = window.location.origin;
 
       // Use the OAuth2 page with popup flow
-      const authUrl = `http://localhost:3003/oauth2/${clientId}?flow=popup&redirect_origin=${encodeURIComponent(
+      const authUrl = `${MEMBROS_ID_URL}/oauth2/${projectId}?flow=popup&redirect_origin=${encodeURIComponent(
         redirectOrigin
       )}`;
 
@@ -196,7 +237,7 @@ export const MembrosProvider = ({
 
       const messageHandler = (event: MessageEvent) => {
         // Allow localhost for debugging
-        if (event.origin !== "http://localhost:3003") return;
+        if (event.origin !== MEMBROS_ID_URL) return;
 
         if (event.data.type === "oauth" && event.data.code) {
           clearInterval(checkClosed);
@@ -221,38 +262,6 @@ export const MembrosProvider = ({
 
   const login = async (authorizationCode: string) => {
     try {
-      // For debugging with mock codes, simulate token exchange
-      if (authorizationCode.startsWith("auth_code_")) {
-        // Simulate a successful token exchange
-        const mockToken = `mock_token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        const mockRefreshToken = `mock_refresh_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        
-        setCookie(null, "nextauth.token", mockToken, {
-          path: "/",
-          maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
-        });
-        setCookie(null, "nextauth.refreshToken", mockRefreshToken, {
-          path: "/",
-          maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
-        });
-        
-        // Mock user data for testing
-        const mockUser = {
-          id: "mock-user-id",
-          name: "Mock User",
-          email: "mock@example.com",
-          plano: "vestibulando" as const,
-        };
-        
-        setUser(mockUser);
-        setToken(mockToken);
-        setInternalIsLoadingUser(false);
-        setInternalIsLoadingSubscriptions(false);
-        
-        toast.success("Login Successful", { description: "You are now logged in (mock mode)." });
-        return;
-      }
-
       // Real token exchange for production
       const res = await fetch(`${MEMBROS_API_URL}/user/auth/token`, {
         method: "POST",
@@ -270,13 +279,13 @@ export const MembrosProvider = ({
           maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
         });
         await loadUserByToken(responseData.access_token);
-        toast.success("Login Successful", { description: "You are now logged in." });
+        toast.success("Login realizado com sucesso", { description: "Agora você está logado." });
       } else {
-        toast.error("Login Failed", { description: responseData.message || "Failed to retrieve token." });
+        toast.error("Falha ao realizar login", { description: responseData.message || "Falha ao realizar login." });
       }
     } catch (error) {
       console.error("Login error:", error);
-      toast.error("Server Error", { description: "An error occurred while fetching the token." });
+      toast.error("Erro ao realizar login", { description: "Ocorreu um erro ao realizar login." });
     }
   };
 
@@ -287,6 +296,7 @@ export const MembrosProvider = ({
     setUser(null);
     setToken(null);
     setUserSubscriptions([]);
+    setCurrentSubscription(null);
     setOriginalUser(null);
 
     setInternalIsLoadingUser(false);
@@ -303,7 +313,7 @@ export const MembrosProvider = ({
   };
 
   const hasActivePlan = (planIds?: string[]): boolean => {
-    if (!userSubscriptions || userSubscriptions.length === 0) {
+    if (!userSubscriptions || !Array.isArray(userSubscriptions) || userSubscriptions.length === 0) {
       return false;
     }
     if (!planIds || planIds.length === 0) {
@@ -320,6 +330,36 @@ export const MembrosProvider = ({
     return false;
   };
 
+  const getCurrentSubscriptionForPlans = (planIds?: string[]): Subscription | null => {
+    if (!userSubscriptions || !Array.isArray(userSubscriptions) || userSubscriptions.length === 0) {
+      return null;
+    }
+    
+    // If no planIds specified, return the first active subscription
+    if (!planIds || planIds.length === 0) {
+      const activeSubscriptions = userSubscriptions.filter(sub => sub.status === 'active');
+      return activeSubscriptions.length > 0 ? activeSubscriptions[0] : null;
+    }
+    
+    // Find the first active subscription that matches the planIds
+    for (const subscription of userSubscriptions) {
+      const subscriptionPlanId = String(subscription.plan.id);
+      if (planIds.includes(subscriptionPlanId) && subscription.status === 'active') {
+        return subscription;
+      }
+    }
+    
+    // If no active subscription matches, find any subscription that matches
+    for (const subscription of userSubscriptions) {
+      const subscriptionPlanId = String(subscription.plan.id);
+      if (planIds.includes(subscriptionPlanId)) {
+        return subscription;
+      }
+    }
+    
+    return null;
+  };
+
   const overwriteUser = (newUser: User) => {
     if (!originalUser) {
       setOriginalUser(user);
@@ -334,6 +374,43 @@ export const MembrosProvider = ({
     if (originalUser) {
       setUser(originalUser);
       setOriginalUser(null);
+    }
+  };
+
+  const loadProject = async () => {
+    setIsLoadingProject(true);
+    setProjectError(null);
+    
+    try {
+      const response = await fetch(`http://localhost:3000/project/${projectId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjA3NjAwODBlLWY4ZjMtNGNlZC05ODhmLTViOWNmNzcyYjE5ZSIsIm5hbWUiOiJNRU1CUk9TIFNFUlZJQ09TIERFIElORk9STUFUSUNBIExUREEiLCJlbWFpbCI6ImNvbnRhdG9AbWVtYnJvcy5hcHAiLCJzdGF0dXMiOiJhY3RpdmUiLCJpYXQiOjE3NDYwMjY1ODEsImV4cCI6MTc0ODYxODU4MX0.JexBhP_oSRMuW_PPm9eCOQKWaEUH-ik3iXgfUcOmESM'
+        }
+      });
+
+      if (response.ok) {
+        const projectData: Project = await response.json();
+        setProject(projectData);
+        
+        // Extract plan IDs from the project data
+        if (projectData.plan && Array.isArray(projectData.plan)) {
+          const planIds = projectData.plan.map(plan => plan.id);
+          setProjectPlans(planIds);
+        } else {
+          setProjectPlans([]);
+        }
+      } else {
+        const errorMessage = `Failed to load project: ${response.status}`;
+        setProjectError(new Error(errorMessage));
+        console.error(errorMessage);
+      }
+    } catch (error) {
+      console.error("Error loading project:", error);
+      setProjectError(error as Error);
+    } finally {
+      setIsLoadingProject(false);
     }
   };
 
@@ -356,9 +433,15 @@ export const MembrosProvider = ({
         adimplent,
         overwriteUser,
         revertToOriginalUser,
-        publicKey: clientId,
         hasActivePlan,
+        getCurrentSubscriptionForPlans,
         userSubscriptions,
+        currentSubscription,
+        project,
+        isLoadingProject,
+        projectError,
+        loadProject,
+        projectPlans,
       }}
     >
       <Toaster richColors />

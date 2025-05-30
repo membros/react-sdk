@@ -11,7 +11,7 @@ export const useAuthButton = (
   onAuthSuccess?: (accessToken: string) => void,
   redirectMode: "popup" | "redirect" = "popup"
 ) => {
-  const { loadUserByToken, publicKey } = useAuth();
+  const { loadUserByToken, project } = useAuth();
 
   const fetchToken = async (authorizationCode: string, useToast?: any) => {
     try {
@@ -83,7 +83,7 @@ export const useAuthButton = (
     if (redirectMode === "redirect") {
       // Full page redirect using OAuth2 page
       const redirectUri = encodeURIComponent(window.location.href);
-      const authUrl = `${MEMBROS_ID_URL}/oauth2/${publicKey}?flow=redirect&redirect_uri=${redirectUri}`;
+      const authUrl = `${MEMBROS_ID_URL}/oauth2/${project?.id}?flow=redirect&redirect_uri=${redirectUri}`;
       window.location.href = authUrl;
     } else {
       // Popup window (default behavior)
@@ -94,7 +94,7 @@ export const useAuthButton = (
       const specs = `width=${width},height=${height},top=${top},left=${left},menubar=no,toolbar=no,location=no,status=no`;
 
       const redirectOrigin = encodeURIComponent(window.location.origin);
-      const authUrl = `${MEMBROS_ID_URL}/oauth2/${publicKey}?flow=popup&redirect_origin=${redirectOrigin}`;
+      const authUrl = `${MEMBROS_ID_URL}/oauth2/${project?.id}?flow=popup&redirect_origin=${redirectOrigin}`;
       
       const authWindow = window.open(authUrl, "_blank", specs);
 

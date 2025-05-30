@@ -1,7 +1,6 @@
 export { withAuthenticationRequired } from "./hocs/withAuthenticationRequired";
 export { LoginButton } from "./components/LoginButton";
 export { LogoutButton } from "./components/LogoutButton";
-export { Profile } from "./components/Profile";
 export { MembrosProvider, useAuth, signOut } from "./AuthContext";
 export { useAuthButton, MembrosAuthButton } from "./AuthButton";
 export { withAuth } from "./hocs/withAuth";

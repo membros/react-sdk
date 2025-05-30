@@ -1,7 +1,6 @@
 export { withAuthenticationRequired } from "./hocs/withAuthenticationRequired";
 export { LoginButton } from "./components/LoginButton";
 export { LogoutButton } from "./components/LogoutButton";
-export { Profile } from "./components/Profile";
 
 // Membros specific exports (previously legacy)
 export { MembrosProvider, useAuth, signOut } from "./AuthContext";
